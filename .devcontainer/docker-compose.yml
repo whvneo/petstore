@@ -1,0 +1,58 @@
+services:
+
+  petstore: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - GIT_EMAIL=${GIT_EMAIL}
+        - GIT_USERNAME=${GIT_USERNAME}
+    volumes:
+      - ..:/home/coder/workspace
+      - ~/.ssh:/home/coder/.ssh:ro
+    working_dir: /home/coder/workspace
+    hostname: petstore
+    networks:
+      - default
+    container_name: petstore
+    command: /bin/sh -c "while sleep 1000; do :; done"
+
+  petstore-nexus:
+    image: sonatype/nexus3:3.62.0
+    ports:
+      - "8081:8081"
+    volumes:
+      - petstore-nexus-data:/nexus-data
+    networks:
+      - default
+    hostname: petstore-nexus
+    container_name: petstore-nexus
+    
+  petstore-postgres:
+    image: postgres:15.3
+    ports:
+      - "5555:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: modulith
+    networks:
+      - default
+    volumes:
+      - petstore-postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    hostname: petstore-postgres
+    container_name: petstore-postgres
+  
+    
+    
+networks:
+  default:
+    external: true
+    name: devcontainer
+
+volumes:
+  petstore-nexus-data:
+    driver: local
+  petstore-postgres-data:
+    driver: local
